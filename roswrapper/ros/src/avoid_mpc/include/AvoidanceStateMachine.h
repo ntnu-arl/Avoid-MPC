@@ -8,6 +8,7 @@
 #include <geometry_msgs/PointStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
+#include <std_msgs/Float32.h>
 #include <quadrotor_msgs/BfctrlStatue.h>
 #include <quadrotor_msgs/Command.h>
 #include <quadrotor_msgs/TakeoffLand.h>
@@ -94,6 +95,7 @@ private:
     COGFilter mCogFilter;
 
     ros::Publisher mPubCmd;
+    ros::Publisher mPubTime;
     ros::Publisher mPubTakeoffLand;
     ros::Publisher mPubTrajVis;
     ros::Publisher mPubPtCloud;

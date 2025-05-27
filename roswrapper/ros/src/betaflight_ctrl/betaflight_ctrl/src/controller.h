@@ -40,6 +40,8 @@ struct Controller_Output_t {
     // Collective mass normalized thrust
     double thrust;
 
+    double yaw_rate;
+
     // Eigen::Vector3d des_v_real;
 };
 
@@ -50,6 +52,7 @@ public:
                                            const Odom_Data_t &odom,
                                            uint8_t mode);
     double GetThrust(double accbz);
+    double GetThrust(double accbz, double r33);
     bool estimateThrustModel(const Eigen::Vector3d &est_v, double cur_thrust);
     void resetThrustMapping(void);
 

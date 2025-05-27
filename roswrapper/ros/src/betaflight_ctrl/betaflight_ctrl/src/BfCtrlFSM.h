@@ -7,11 +7,14 @@
 #include "controller.h"
 #include "input.h"
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Quaternion.h>
+#include <geometry_msgs/Twist.h>
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/CommandLong.h>
 #include <mavros_msgs/SetMode.h>
 #include <nav_msgs/Odometry.h>
 #include <quadrotor_msgs/BfctrlStatue.h>
+
 struct AutoTakeoffLand_t {
     bool landed{true};
     ros::Time toggle_takeoff_land_time;
@@ -44,6 +47,9 @@ public:
     GeometricController &controller;
 
     ros::Publisher ctrl_FCU_pub;
+    ros::Publisher ctrl_acc_pub;
+    ros::Publisher ctrl_att_pub;
+    ros::Publisher ctrl_rates_pub;
     ros::Publisher des_pub;
     ros::Publisher statue_pub;
     ros::ServiceClient set_FCU_mode_srv;

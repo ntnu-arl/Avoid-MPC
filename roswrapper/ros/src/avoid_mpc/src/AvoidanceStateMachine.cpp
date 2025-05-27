@@ -2,6 +2,7 @@
 #include "ParameterManager.h"
 #include <sensor_msgs/PointCloud2.h>
 #include <visualization_msgs/Marker.h>
+#include <chrono>
 AvoidanceStateMachine::AvoidanceStateMachine(ros::NodeHandle &nodeHandle)
     : mNodeHandle(nodeHandle), mVecStateQuad(10), mStateProcess(INIT),
       mbIsReceiveOdom(false), mCogFilter(10, 0.8) {
@@ -95,6 +96,9 @@ void AvoidanceStateMachine::SetupROS() {
         mPubPtCloud =
             mNodeHandle.advertise<sensor_msgs::PointCloud2>("point_cloud", 10);
     }
+    mPubTime =
+        mNodeHandle.advertise<std_msgs::Float32>("/hummingbird/iter_time", 100);
+
     mSubOdom = mNodeHandle.subscribe(
         "/bfctrl/local_odom", 50, &AvoidanceStateMachine::OdomCallback, this);
     mSubIMU = mNodeHandle.subscribe("/mavros/imu/data", 50,
@@ -320,6 +324,7 @@ void AvoidanceStateMachine::Step(const ros::TimerEvent &event) {
         break;
     }
     case TASK: {
+        auto start = std::chrono::high_resolution_clock::now();
         std::vector<double> u;
         std::vector<std::vector<double>> x0Array;
         GetInitPath();
@@ -351,6 +356,10 @@ void AvoidanceStateMachine::Step(const ros::TimerEvent &event) {
         if (Param::GetperceptionParam().visualize) {
             PathVisualization(x0Array);
         }
+        std::chrono::duration<double> cpt = std::chrono::high_resolution_clock::now() - start;
+        std_msgs::Float32 msg;
+        msg.data = cpt.count();
+        mPubTime.publish(msg);
         break;
     }
     case LAND: {

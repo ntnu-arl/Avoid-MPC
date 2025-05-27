@@ -4,7 +4,7 @@ project(betaflight_ctrl)
 set(CMAKE_VERBOSE_MAKEFILE "false")
 
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_FLAGS "-std=c++11")
+set(CMAKE_CXX_FLAGS "-std=c++17")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
 find_package(catkin REQUIRED COMPONENTS
@@ -19,7 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
 )
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
-find_package(Eigen3 REQUIRED) 
+find_package(Eigen3 REQUIRED)
 
 catkin_package(
 )
@@ -31,7 +31,7 @@ include_directories(
   include
 )
 
-add_executable(bfctrl_node 
+add_executable(bfctrl_node
   src/bfctrl_node.cpp
   src/BfCtrlFSM.cpp
   src/BfCtrlParam.cpp

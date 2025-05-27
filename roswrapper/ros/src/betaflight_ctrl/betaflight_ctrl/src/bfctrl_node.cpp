@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
         ros::VoidConstPtr(), ros::TransportHints().tcpNoDelay());
 
     ros::Subscriber imu_sub = nh.subscribe<sensor_msgs::Imu>(
-        "/mavros/imu/data", 100,
+        "imu", 100,
         boost::bind(&Imu_Data_t::feed, &fsm.imu_data, _1), ros::VoidConstPtr(),
         ros::TransportHints().tcpNoDelay());
     ros::Publisher home_pub =
@@ -69,6 +69,9 @@ int main(int argc, char *argv[]) {
         ros::VoidConstPtr(), ros::TransportHints().tcpNoDelay());
     fsm.ctrl_FCU_pub = nh.advertise<mavros_msgs::AttitudeTarget>(
         "/mavros/setpoint_raw/attitude", 10);
+    fsm.ctrl_acc_pub = nh.advertise<geometry_msgs::Twist>("/rmf_owl/cmd/acc", 10);
+    fsm.ctrl_att_pub = nh.advertise<geometry_msgs::Quaternion>("/rmf_owl/cmd/att", 10);
+    // fsm.ctrl_rates_pub = nh.advertise<geometry_msgs::Quaternion>("/rmf_owl/cmd/att", 10);
     fsm.des_pub = nh.advertise<nav_msgs::Odometry>("des", 10);
     fsm.statue_pub = statue_pub;
     if (Param::get().no_odom) {

@@ -28,30 +28,53 @@ GeometricController::GeometryController(Desired_State_t &des,
                                         const Odom_Data_t &odom, uint8_t mode) {
     Controller_Output_t u;
     Eigen::Vector3d desired_acc = Eigen::Vector3d::Zero();
+    // if (odom.v(0) * odom.v(0) + odom.v(1) * odom.v(1) > 0.2 * 0.2)
+    //     des.yaw = getVelocityYaw(odom.v);
+    Eigen::Vector3d W_g =  Eigen::Vector3d(0, 0, - Param::get().gra);
+
+    const Eigen::Matrix3d W_R_B = odom.q.toRotationMatrix();
+
     if (mode == quadrotor_msgs::Command::ACCELERATION_MODE) {
         desired_acc = des.a;
     } else if (mode == quadrotor_msgs::Command::POSITION_MODE) {
-        desired_acc = controlPosition(des.p, des.v, des.a, des.yaw, odom);
+        desired_acc = controlPosition(des.p, des.v, des.a, des.yaw, odom) - W_g;
     }
-    if (mode != quadrotor_msgs::Command::ANGULAR_MODE) {
-        if (mode == quadrotor_msgs::Command::QUAT_MODE) {
-            u.q = des.q;
-            u.thrust = GetThrust(des.thrust);
-        } else {
-            u.q = acc2quaternion(desired_acc, des.yaw);
-            const Eigen::Matrix3d rotmat = odom.q.toRotationMatrix();
-            const Eigen::Vector3d zboby = rotmat.col(2);
-            u.thrust = GetThrust(desired_acc.dot(zboby));
-        }
-        if (Param::get().use_bodyrate_ctrl) {
-            u.bodyrates =
-                geometric_attcontroller(u.q, odom.q); // Calculate BodyRate
-        }
-    } else { // mode == quadrotor_msgs::Command::ANGULAR_MODE
-        u.bodyrates = des.w;
-        u.thrust = GetThrust(des.thrust);
-    }
+    Eigen::Quaterniond target_q = acc2quaternion(desired_acc, des.yaw);
+    double target_yaw = fromQuaternion2yaw(target_q);
+    double curr_yaw = fromQuaternion2yaw(odom.q);
+
+    // // if acc control, highjack u struct
+    // u.bodyrates = W_R_B.transpose() * (desired_acc + W_g);
+    // u.yaw_rate = (target_yaw - curr_yaw) * 0.2;  // simple P
+
+    // acc to att
+    const Eigen::Vector3d zboby = W_R_B.col(2);
+    u.q = target_q;
+    u.thrust = Param::get().mass * (W_R_B.transpose() * desired_acc).dot(zboby);
+    u.yaw_rate = (target_yaw - curr_yaw) * 0.2;  // simple P
+
+    // if (mode != quadrotor_msgs::Command::ANGULAR_MODE) {
+    //     if (mode == quadrotor_msgs::Command::QUAT_MODE) {
+    //         u.q = des.q;
+    //         u.thrust = GetThrust(des.thrust);
+    //     } else {
+    //         u.q = acc2quaternion(desired_acc, des.yaw);
+    //         const Eigen::Matrix3d rotmat = odom.q.toRotationMatrix();
+    //         const Eigen::Vector3d zboby = rotmat.col(2);
+    //         u.thrust = GetThrust(desired_acc.dot(zboby));
+    //     }
+    //     if (Param::get().use_bodyrate_ctrl) {
+    //         u.bodyrates =
+    //             geometric_attcontroller(u.q, odom.q); // Calculate BodyRate
+    //     }
+    // } else { // mode == quadrotor_msgs::Command::ANGULAR_MODE
+    //     u.bodyrates = des.w;
+    //     u.thrust = GetThrust(des.thrust);
+    // }
     return u;
+}
+double GeometricController::GetThrust(double accbz, double r33) {
+    return Param::get().mass * (accbz + r33 * Param::get().gra);
 }
 double GeometricController::GetThrust(double accbz) {
     double thrust = accbz / thr2acc_;
@@ -92,19 +115,17 @@ Eigen::Vector3d GeometricController::controlPosition(
 Eigen::Quaterniond
 GeometricController::acc2quaternion(const Eigen::Vector3d &vector_acc,
                                     const double &yaw) {
-    Eigen::Quaterniond quat;
-    Eigen::Vector3d zb_des, yb_des, xb_des, proj_xb_des;
-    Eigen::Matrix3d rotmat;
+    Eigen::Vector3d zb_des = vector_acc.normalized();
+    Eigen::Vector3d proj_xb_des(std::cos(yaw), std::sin(yaw), 0.0);
+    Eigen::Vector3d yb_des = zb_des.cross(proj_xb_des).normalized();
+    Eigen::Vector3d xb_des = yb_des.cross(zb_des);
 
-    proj_xb_des << std::cos(yaw), std::sin(yaw), 0.0;
-    zb_des = vector_acc / vector_acc.norm();
-    yb_des = zb_des.cross(proj_xb_des) / (zb_des.cross(proj_xb_des)).norm();
-    xb_des = yb_des.cross(zb_des) / (yb_des.cross(zb_des)).norm();
+    Eigen::Matrix3d R_des;
+    R_des.col(0) = xb_des;
+    R_des.col(1) = yb_des;
+    R_des.col(2) = zb_des;
 
-    rotmat << xb_des(0), yb_des(0), zb_des(0), xb_des(1), yb_des(1), zb_des(1),
-        xb_des(2), yb_des(2), zb_des(2);
-
-    quat = Eigen::Quaterniond(rotmat);
+    Eigen::Quaterniond quat = Eigen::Quaterniond(R_des);
     quat.normalize();
     return quat;
 }

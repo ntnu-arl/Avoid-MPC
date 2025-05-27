@@ -4,6 +4,7 @@
 #endif
 #include "BfCtrlFSM.h"
 #include <uav_utils/converters.h>
+#include <cmath>
 using namespace std;
 using namespace uav_utils;
 
@@ -29,7 +30,7 @@ void BfCtrlFSM::process(const ros::TimerEvent &event) {
             state = AUTO_HOVER;
         } else {
             hover_des = Desired_State_t(odom_data);
-            hover_des.p.z() += Param::get().takeoff_land.height;
+            hover_des.p.z() = Param::get().takeoff_land.height;
             ROS_INFO("\033[32m[bfctrl]\033[0m INIT(L0) --> "
                      "AUTO_TAKEOFF(L1)");
             set_start_pose_for_takeoff_land(odom_data);
@@ -39,8 +40,7 @@ void BfCtrlFSM::process(const ros::TimerEvent &event) {
     }
     case AUTO_TAKEOFF: {
         des = get_takeoff_land_des(Param::get().takeoff_land.speed);
-        if (abs(hover_des.p.z() - odom_data.p.z()) <
-            0.1) // Try to jump to AUTO_HOVER
+        if (abs(hover_des.p.z() - odom_data.p.z()) < 0.1) // Try to jump to AUTO_HOVER
         {
             if (odom_data.v.norm() > 3.0) {
                 ROS_ERROR("\033[32m[bfctrl]\033[0m Reject AUTO_HOVER(L2). "
@@ -225,9 +225,9 @@ Desired_State_t BfCtrlFSM::get_takeoff_land_des(const double speed) {
                          .toSec(); // speed > 0 means takeoff
 
     Desired_State_t des;
-    des.p = takeoff_land.start_pose.head<3>() +
-            Eigen::Vector3d(0, 0, speed * delta_t);
-    des.v = Eigen::Vector3d(0, 0, speed);
+    des.p = Eigen::Vector3d(takeoff_land.start_pose(0), takeoff_land.start_pose(1), Param::get().takeoff_land.height);
+    des.v = Eigen::Vector3d::Zero();
+    des.a = Eigen::Vector3d::Zero();
     des.a = Eigen::Vector3d::Zero();
     des.j = Eigen::Vector3d::Zero();
     des.yaw = takeoff_land.start_pose(3);
@@ -256,6 +256,7 @@ Desired_State_t BfCtrlFSM::get_auto_takeoff_des(const double speed_max,
 }
 void BfCtrlFSM::set_hov_with_odom() {
     hover_pose.head<3>() = odom_data.p;
+    hover_pose(2) = Param::get().takeoff_land.height;
     hover_pose(3) = get_yaw_from_quaternion(odom_data.q);
 
     last_set_hover_pose_time = ros::Time::now();
@@ -325,31 +326,55 @@ bool BfCtrlFSM::recv_new_odom() {
 
 void BfCtrlFSM::publish_ctrl(const Controller_Output_t &u,
                              const ros::Time &stamp) {
-    mavros_msgs::AttitudeTarget msg;
+    // mavros_msgs::AttitudeTarget msg;
+    //
+    // msg.header.stamp = stamp;
+    // msg.header.frame_id = std::string("world");
+    // if (Param::get().use_bodyrate_ctrl || is_angular_cmd_mode()) {
+    //     ROS_WARN("ignore att");
+    //     msg.type_mask = mavros_msgs::AttitudeTarget::IGNORE_ATTITUDE;
+    // } else {
+    //     ROS_WARN("ignore rates");
+    //     msg.type_mask = mavros_msgs::AttitudeTarget::IGNORE_ROLL_RATE |
+    //                     mavros_msgs::AttitudeTarget::IGNORE_PITCH_RATE |
+    //                     mavros_msgs::AttitudeTarget::IGNORE_YAW_RATE;
+    // }
+    // Eigen::Quaterniond odom2imu = imu_data.q * odom_data.q.inverse();
+    // Eigen::Quaterniond quatImu = odom2imu * u.q;
+    // msg.orientation.x = quatImu.x();
+    // msg.orientation.y = quatImu.y();
+    // msg.orientation.z = quatImu.z();
+    // msg.orientation.w = quatImu.w();
+    //
+    // msg.body_rate.x = u.bodyrates.x();
+    // msg.body_rate.y = u.bodyrates.y();
+    // msg.body_rate.z = u.bodyrates.z();
+    //
+    // msg.thrust = u.thrust;
+    // ctrl_FCU_pub.publish(msg);
 
-    msg.header.stamp = stamp;
-    msg.header.frame_id = std::string("world");
     if (Param::get().use_bodyrate_ctrl || is_angular_cmd_mode()) {
-        msg.type_mask = mavros_msgs::AttitudeTarget::IGNORE_ATTITUDE;
+        ROS_WARN("rate ctrl todo");
     } else {
-        msg.type_mask = mavros_msgs::AttitudeTarget::IGNORE_ROLL_RATE |
-                        mavros_msgs::AttitudeTarget::IGNORE_PITCH_RATE |
-                        mavros_msgs::AttitudeTarget::IGNORE_YAW_RATE;
+        double roll = atan2(2 * (u.q.w()*u.q.x() + u.q.y()*u.q.z()), 1 - 2 * (u.q.x()*u.q.x() + u.q.y()*u.q.y()));
+        double pitch = asin(2 * (u.q.w()*u.q.y() - u.q.z()*u.q.x()));
+
+        geometry_msgs::Quaternion msg;
+        msg.w = u.thrust;
+        msg.x = roll;
+        msg.y = pitch;
+        msg.z = u.yaw_rate;
+
+        ctrl_att_pub.publish(msg);
+
+        // geometry_msgs::Twist msg;
+        // msg.linear.x = u.bodyrates.x();
+        // msg.linear.y = u.bodyrates.y();
+        // msg.linear.z = u.bodyrates.z();
+        // msg.angular.z = u.yaw_rate;
+
+        // ctrl_acc_pub.publish(msg);
     }
-    Eigen::Quaterniond odom2imu = imu_data.q * odom_data.q.inverse();
-    Eigen::Quaterniond quatImu = odom2imu * u.q;
-    msg.orientation.x = quatImu.x();
-    msg.orientation.y = quatImu.y();
-    msg.orientation.z = quatImu.z();
-    msg.orientation.w = quatImu.w();
-
-    msg.body_rate.x = u.bodyrates.x();
-    msg.body_rate.y = u.bodyrates.y();
-    msg.body_rate.z = u.bodyrates.z();
-
-    msg.thrust = u.thrust;
-
-    ctrl_FCU_pub.publish(msg);
 }
 
 void BfCtrlFSM::publish_des(const Desired_State_t &des,
