@@ -15,7 +15,7 @@
 #include <mavros_msgs/SetMode.h>
 #include <nav_msgs/Odometry.h>
 #include <quadrotor_msgs/BfctrlStatue.h>
-// #include <rpg_quadrotor_msgs/ControlCommand.h>
+#include <rpg_quadrotor_msgs/ControlCommand.h>
 
 struct AutoTakeoffLand_t {
     bool landed{true};

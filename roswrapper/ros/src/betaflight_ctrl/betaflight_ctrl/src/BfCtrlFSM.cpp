@@ -390,35 +390,34 @@ void BfCtrlFSM::publish_ctrl(const Controller_Output_t &u,
     // ctrl_FCU_pub.publish(msg);
 
     if (Param::get().use_bodyrate_ctrl) {
-        // rpg_quadrotor_msgs::ControlCommand msg;
-        // msg.header.stamp = stamp;
-        // // msg.header.frame_id = "body";
-        // msg.control_mode = 2;
-        // msg.armed = true;
-        // msg.expected_execution_time = ros::Time::now();
-        // msg.collective_thrust = u.thrust;
-        // msg.bodyrates = u.bodyrates;
-        //
-        // ctrl_rates_pub.publish(msg);
+        rpg_quadrotor_msgs::ControlCommand msg;
+        msg.header.stamp = stamp;
+        msg.control_mode = 2;
+        msg.armed = true;
+        msg.expected_execution_time = ros::Time::now();
+        msg.collective_thrust = u.thrust;
+        msg.bodyrates = u.bodyrates;
+
+        ctrl_rates_pub.publish(msg);
     } else {
         double roll = atan2(2 * (u.q.w()*u.q.x() + u.q.y()*u.q.z()), 1 - 2 * (u.q.x()*u.q.x() + u.q.y()*u.q.y()));
         double pitch = asin(2 * (u.q.w()*u.q.y() - u.q.z()*u.q.x()));
 
-        // geometry_msgs::Quaternion msg;
-        // msg.w = u.thrust;
-        // msg.x = roll;
-        // msg.y = pitch;
-        // msg.z = u.yaw_rate;
+        geometry_msgs::Quaternion msg;
+        msg.w = u.thrust;
+        msg.x = roll;
+        msg.y = pitch;
+        msg.z = u.yaw_rate;
+
+        ctrl_att_pub.publish(msg);
+
+        // geometry_msgs::Twist msg;
+        // msg.linear.x = u.bodyrates.x();
+        // msg.linear.y = u.bodyrates.y();
+        // msg.linear.z = u.bodyrates.z();
+        // msg.angular.z = u.yaw_rate;
         //
-        // ctrl_att_pub.publish(msg);
-
-        geometry_msgs::Twist msg;
-        msg.linear.x = u.bodyrates.x();
-        msg.linear.y = u.bodyrates.y();
-        msg.linear.z = u.bodyrates.z();
-        msg.angular.z = u.yaw_rate;
-
-        ctrl_acc_pub.publish(msg);
+        // ctrl_acc_pub.publish(msg);
     }
 }
 

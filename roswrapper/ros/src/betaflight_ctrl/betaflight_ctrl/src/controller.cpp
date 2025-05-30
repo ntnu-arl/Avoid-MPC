@@ -45,10 +45,10 @@ GeometricController::GeometryController(Desired_State_t &des,
     double curr_yaw = fromQuaternion2yaw(odom.q);
     double dyaw = (target_yaw - curr_yaw) * Kyaw_;  // simple P
 
-    // if acc control, highjack u struct
-    u.bodyrates = W_R_B.transpose() * (desired_acc + W_g);
-    u.yaw_rate = dyaw;
-    return u;
+    // // if acc control, highjack u struct
+    // u.bodyrates = W_R_B.transpose() * (desired_acc + W_g);
+    // u.yaw_rate = dyaw;
+    // return u;
 
     // acc to att
     const Eigen::Vector3d zboby = W_R_B.col(2);
