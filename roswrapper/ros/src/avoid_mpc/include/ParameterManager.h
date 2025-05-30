@@ -56,8 +56,9 @@ public:
     struct TaskParam {
         std::string task;
         double speed;
-        double height;
-        double farestPoint;
+        double gx;
+        double gy;
+        double gz;
     };
     void init(ros::NodeHandle &nodeHandle);
 

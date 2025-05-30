@@ -7,7 +7,7 @@ nearest_point_num: 3
 goal_p_x: 50.0
 goal_p_y: 50.0
 goal_p_z: 100.0
-goal_yaw: 100.0
+goal_yaw: 10.0
 goal_v_x: 1.0
 goal_v_y: 1.0
 goal_v_z: 1.0
@@ -18,7 +18,7 @@ goal_a_z: 0.0
 path_p_x: 0.0
 path_p_y: 10.0
 path_p_z: 100.0
-path_yaw: 100.0
+path_yaw: 10.0
 path_v_x: 0.0
 path_v_y: 3.0
 path_v_z: 3.0
@@ -43,7 +43,7 @@ gain_a_y: 0.999999
 gain_a_z: 0.999999
 gain_yaw_dot: 1. # For future use
 
-speed: 2.0
+speed: 1
 drone_radius: 0.5
 
 a_min_z: 5.0
@@ -51,10 +51,9 @@ a_max_z: 15.0
 a_max_xy: 10.0
 a_max_yaw_dot: 5.0
 
-height: 4
-goal_x: 50
-goal_y: 50
-goal_z: 55
+goal_x: 6
+goal_y: 2
+goal_z: 1.5
 safety_distance: 0.2
 
 # perception parameters
@@ -77,7 +76,7 @@ keyframe_th_count: 10
 max_frame_count: 100
 
 decay: 0.015 #second
-use_odom_est: true
+use_odom_est: false
 
 slow_down_kp: 0.3
 slow_down_kd: 0.3

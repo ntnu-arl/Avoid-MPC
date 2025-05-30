@@ -6,7 +6,8 @@
   <arg name="visualize" default="true"/>
   <arg name="mpc_so" default="$(find avoid_mpc)/so/mpc_obstacle_v2.so"/>
   <arg name="con_dt" default="0.033"/>
-  <arg name="task" default="forward"/>
+  <arg name="task" default="global_goal"/>
+  <!-- <arg name="task" default="forward"/> -->
 	<!-- <group ns="/airsim_node/drone_1/front_center/Scene">
       <rosparam param="disable_pub_plugins">
         - 'image_transport/compressed'

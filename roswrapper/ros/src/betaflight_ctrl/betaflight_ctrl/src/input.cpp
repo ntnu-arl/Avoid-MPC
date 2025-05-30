@@ -19,6 +19,8 @@ void Odom_Data_t::feed(nav_msgs::OdometryConstPtr pMsg) {
     rcv_stamp = now;
     recv_new_msg = true;
     uav_utils::extract_odometry(pMsg, p, v, q, w);
+    v = q.toRotationMatrix() * v;
+    w = q.toRotationMatrix() * w;
 
     if (!recived) {
         recived = true;
@@ -59,12 +61,11 @@ void Odom_Data_t::feed(nav_msgs::OdometryConstPtr pMsg) {
         homePosMsg.pose.pose.position.z = homeT.z();
         pubHome.publish(homePosMsg);
     }
-    if (!Param::get().use_global_odom) {
+    if (!Param::get().use_global_odom)
         Global2Local();
-        localOdomMsg.header = pMsg->header;
-        localOdomMsg.header.frame_id = "world";
-        SendLocalOdom();
-    }
+    localOdomMsg.header = pMsg->header;
+    localOdomMsg.header.frame_id = "world";
+    SendLocalOdom();
     // check the frequency
     static int one_min_count = 9999;
     static ros::Time last_clear_count_time = ros::Time(0.0);

@@ -39,8 +39,21 @@ void BfCtrlFSM::process(const ros::TimerEvent &event) {
         break;
     }
     case AUTO_TAKEOFF: {
+        // send yaw in local odom frame
+        // Eigen::Vector3d goal(Param::get().gx, Param::get().gy, Param::get().takeoff_land.height);
+        // // ROS_INFO("\033[32m[bfctrl]\033[0m global goal: %f %f %f", goal(0), goal(1), goal(2));
+        // goal = odom_data.homeRInv * (goal - odom_data.homeT);
+        // // ROS_INFO("\033[32m[bfctrl]\033[0m local goal: %f %f %f", goal(0), goal(1), goal(2));
+        geometry_msgs::PointStamped msg;
+        msg.header.stamp = ros::Time::now();
+        msg.point.x = goal.x();
+        msg.point.y = goal.y();
+        msg.point.z = goal.z();
+        global_goal_pub.publish(msg);
+
         des = get_takeoff_land_des(Param::get().takeoff_land.speed);
-        if (abs(hover_des.p.z() - odom_data.p.z()) < 0.1) // Try to jump to AUTO_HOVER
+        if (abs(des.p.z() - odom_data.p.z()) < 0.1
+            && abs(get_yaw_from_quaternion(odom_data.q) - des.yaw < 0.1)) // Try to jump to AUTO_HOVER
         {
             if (odom_data.v.norm() > 3.0) {
                 ROS_ERROR("\033[32m[bfctrl]\033[0m Reject AUTO_HOVER(L2). "
@@ -108,9 +121,32 @@ void BfCtrlFSM::process(const ros::TimerEvent &event) {
                      "SLOW_DOWN");
             set_hov_with_odom();
             des = get_hover_des();
-        } else {
+        } else if ((goal - odom_data.p).norm() < 1) {
+            state = GOAL_HOVER;
+            ROS_INFO(
+                "\033[32m[bfctrl]\033[0m From CMD_CTRL(L3) to GOAL_HOVER!");
+            des.p = goal;
+            des.yaw = get_yaw_from_quaternion(odom_data.q);
+            des.v = Eigen::Vector3d::Zero();
+            des.w = Eigen::Vector3d::Zero();
+            des.a = Eigen::Vector3d::Zero();
+            des.j = Eigen::Vector3d::Zero();
+            des.yaw_rate = 0.;
+        }
+        else {
             des = get_cmd_des();
         }
+        break;
+    }
+
+    case GOAL_HOVER: {
+        des.p = goal;
+        des.yaw = get_yaw_from_quaternion(odom_data.q);
+        des.v = Eigen::Vector3d::Zero();
+        des.w = Eigen::Vector3d::Zero();
+        des.a = Eigen::Vector3d::Zero();
+        des.j = Eigen::Vector3d::Zero();
+        des.yaw_rate = 0.;
         break;
     }
 
@@ -220,9 +256,9 @@ Desired_State_t BfCtrlFSM::get_cmd_des() {
 }
 
 Desired_State_t BfCtrlFSM::get_takeoff_land_des(const double speed) {
-    ros::Time now = ros::Time::now();
-    double delta_t = (now - takeoff_land.toggle_takeoff_land_time)
-                         .toSec(); // speed > 0 means takeoff
+    // ros::Time now = ros::Time::now();
+    // double delta_t = (now - takeoff_land.toggle_takeoff_land_time)
+    //                      .toSec(); // speed > 0 means takeoff
 
     Desired_State_t des;
     des.p = Eigen::Vector3d(takeoff_land.start_pose(0), takeoff_land.start_pose(1), Param::get().takeoff_land.height);
@@ -230,7 +266,7 @@ Desired_State_t BfCtrlFSM::get_takeoff_land_des(const double speed) {
     des.a = Eigen::Vector3d::Zero();
     des.a = Eigen::Vector3d::Zero();
     des.j = Eigen::Vector3d::Zero();
-    des.yaw = takeoff_land.start_pose(3);
+    des.yaw = atan2(goal.y(), goal.x());
     des.yaw_rate = 0.0;
 
     return des;
@@ -353,27 +389,36 @@ void BfCtrlFSM::publish_ctrl(const Controller_Output_t &u,
     // msg.thrust = u.thrust;
     // ctrl_FCU_pub.publish(msg);
 
-    if (Param::get().use_bodyrate_ctrl || is_angular_cmd_mode()) {
-        ROS_WARN("rate ctrl todo");
+    if (Param::get().use_bodyrate_ctrl) {
+        // rpg_quadrotor_msgs::ControlCommand msg;
+        // msg.header.stamp = stamp;
+        // // msg.header.frame_id = "body";
+        // msg.control_mode = 2;
+        // msg.armed = true;
+        // msg.expected_execution_time = ros::Time::now();
+        // msg.collective_thrust = u.thrust;
+        // msg.bodyrates = u.bodyrates;
+        //
+        // ctrl_rates_pub.publish(msg);
     } else {
         double roll = atan2(2 * (u.q.w()*u.q.x() + u.q.y()*u.q.z()), 1 - 2 * (u.q.x()*u.q.x() + u.q.y()*u.q.y()));
         double pitch = asin(2 * (u.q.w()*u.q.y() - u.q.z()*u.q.x()));
 
-        geometry_msgs::Quaternion msg;
-        msg.w = u.thrust;
-        msg.x = roll;
-        msg.y = pitch;
-        msg.z = u.yaw_rate;
+        // geometry_msgs::Quaternion msg;
+        // msg.w = u.thrust;
+        // msg.x = roll;
+        // msg.y = pitch;
+        // msg.z = u.yaw_rate;
+        //
+        // ctrl_att_pub.publish(msg);
 
-        ctrl_att_pub.publish(msg);
+        geometry_msgs::Twist msg;
+        msg.linear.x = u.bodyrates.x();
+        msg.linear.y = u.bodyrates.y();
+        msg.linear.z = u.bodyrates.z();
+        msg.angular.z = u.yaw_rate;
 
-        // geometry_msgs::Twist msg;
-        // msg.linear.x = u.bodyrates.x();
-        // msg.linear.y = u.bodyrates.y();
-        // msg.linear.z = u.bodyrates.z();
-        // msg.angular.z = u.yaw_rate;
-
-        // ctrl_acc_pub.publish(msg);
+        ctrl_acc_pub.publish(msg);
     }
 }
 

@@ -85,6 +85,8 @@ private:
 
     double mSpeed;
     double mHeight;
+    double mgx;
+    double mgy;
     uint8_t mStatueQuad;
     ProcessState mStateProcess;
 

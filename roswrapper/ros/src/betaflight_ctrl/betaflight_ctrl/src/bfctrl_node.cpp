@@ -27,9 +27,13 @@ int main(int argc, char *argv[]) {
         "/mavros/state", 10,
         boost::bind(&State_Data_t::feed, &fsm.state_data, _1));
 
+    fsm.global_goal_pub =
+        nh.advertise<geometry_msgs::PointStamped>(
+        "/mpc_obstacle_avoidance_node/global_goal", 100);
+
     ros::Publisher local_pub =
         nh.advertise<nav_msgs::Odometry>("local_odom", 100);
-    fsm.odom_data.pubLocalOdom = local_pub;
+        fsm.odom_data.pubLocalOdom = local_pub;
     ros::Subscriber odom_sub = nh.subscribe<nav_msgs::Odometry>(
         "odom", 100, boost::bind(&Odom_Data_t::feed, &fsm.odom_data, _1),
         ros::VoidConstPtr(), ros::TransportHints().tcpNoDelay());
@@ -71,7 +75,9 @@ int main(int argc, char *argv[]) {
         "/mavros/setpoint_raw/attitude", 10);
     fsm.ctrl_acc_pub = nh.advertise<geometry_msgs::Twist>("/rmf_owl/cmd/acc", 10);
     fsm.ctrl_att_pub = nh.advertise<geometry_msgs::Quaternion>("/rmf_owl/cmd/att", 10);
-    // fsm.ctrl_rates_pub = nh.advertise<geometry_msgs::Quaternion>("/rmf_owl/cmd/att", 10);
+    // fsm.ctrl_rates_pub = nh.advertise<rpg_quadrotor_msgs::ControlCommand>("/hummingbird/autopilot/control_command_input", 10);
+    fsm.ctrl_rates_pub = nh.advertise<geometry_msgs::Quaternion>("/rmf_owl/cmd/acc", 10);
+
     fsm.des_pub = nh.advertise<nav_msgs::Odometry>("des", 10);
     fsm.statue_pub = statue_pub;
     if (Param::get().no_odom) {
@@ -82,6 +88,11 @@ int main(int argc, char *argv[]) {
             ros::spinOnce();
         }
         ROS_INFO("\033[32m[bfctrl]\033[0m Odom received");
+
+        fsm.goal << Param::get().gx, Param::get().gy, Param::get().takeoff_land.height;
+        ROS_INFO("\033[32m[bfctrl]\033[0m global goal: %f %f %f", fsm.goal(0), fsm.goal(1), fsm.goal(2));
+        fsm.goal = fsm.odom_data.homeRInv * (fsm.goal - fsm.odom_data.homeT);
+        ROS_INFO("\033[32m[bfctrl]\033[0m local goal: %f %f %f", fsm.goal(0), fsm.goal(1), fsm.goal(2));
     }
     ros::Duration(1.0).sleep();
     ros::Timer processTimer =

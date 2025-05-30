@@ -108,6 +108,7 @@ void ParameterManager::SetupConParam(ros::NodeHandle &nodeHandle) {
 void ParameterManager::SetupTaskParam(ros::NodeHandle &nodeHandle) {
     nodeHandle.getParam("task", task.task);
     nodeHandle.getParam("speed", task.speed);
-    nodeHandle.getParam("height", task.height);
-    nodeHandle.getParam("goal_x", task.farestPoint);
+    nodeHandle.getParam("goal_x", task.gx);
+    nodeHandle.getParam("goal_y", task.gy);
+    nodeHandle.getParam("goal_z", task.gz);
 }

@@ -6,6 +6,7 @@
 
 #include "controller.h"
 #include "input.h"
+#include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Quaternion.h>
 #include <geometry_msgs/Twist.h>
@@ -14,6 +15,7 @@
 #include <mavros_msgs/SetMode.h>
 #include <nav_msgs/Odometry.h>
 #include <quadrotor_msgs/BfctrlStatue.h>
+// #include <rpg_quadrotor_msgs/ControlCommand.h>
 
 struct AutoTakeoffLand_t {
     bool landed{true};
@@ -46,6 +48,8 @@ public:
     Desired_State_t hover_des;
     GeometricController &controller;
 
+    ros::Publisher global_goal_pub;
+    Eigen::Vector3d goal;
     ros::Publisher ctrl_FCU_pub;
     ros::Publisher ctrl_acc_pub;
     ros::Publisher ctrl_att_pub;
@@ -68,7 +72,8 @@ public:
         CMD_CTRL,     // bfctrl is actived, and controling the drone.
         CMD_TAKEOFF,
         AUTO_LAND,
-        SLOW_DOWN
+        SLOW_DOWN,
+        GOAL_HOVER
     };
 
     BfCtrlFSM(GeometricController &);
@@ -102,6 +107,7 @@ private:
                                          const double height_max);
     // ---- tools ----
     void set_hov_with_odom();
+
 
     void publish_ctrl(const Controller_Output_t &u, const ros::Time &stamp);
     void publish_des(const Desired_State_t &des, const Controller_Output_t &u,

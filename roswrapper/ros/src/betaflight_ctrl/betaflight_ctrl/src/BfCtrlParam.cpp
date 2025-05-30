@@ -25,6 +25,8 @@ void Parameter_t::config_from_ros_handle(const ros::NodeHandle &nh) {
     read_essential_param(nh, "pose_solver", pose_solver);
     read_essential_param(nh, "mass", mass);
     read_essential_param(nh, "gra", gra);
+    read_essential_param(nh, "/mpc_obstacle_avoidance_node/goal_x", gx);
+    read_essential_param(nh, "/mpc_obstacle_avoidance_node/goal_y", gy);
     read_essential_param(nh, "ctrl_freq_max", ctrl_freq_max);
     read_essential_param(nh, "use_bodyrate_ctrl", use_bodyrate_ctrl);
     read_essential_param(nh, "max_manual_vel", max_manual_vel);
@@ -40,7 +42,7 @@ void Parameter_t::config_from_ros_handle(const ros::NodeHandle &nh) {
     read_essential_param(nh, "auto_takeoff_land/enable", takeoff_land.enable);
 
     read_essential_param(nh, "auto_takeoff_land/no_RC", takeoff_land.no_RC);
-    read_essential_param(nh, "auto_takeoff_land/takeoff_height",
+    read_essential_param(nh, "/mpc_obstacle_avoidance_node/goal_z",
                          takeoff_land.height);
     read_essential_param(nh, "auto_takeoff_land/takeoff_land_speed",
                          takeoff_land.speed);
@@ -98,6 +100,8 @@ void Parameter_t::ReadGeoControllerParam(const ros::NodeHandle &nh) {
                          geometry_controller.Kvel_y_);
     read_essential_param(nh, "geo_controller/Kvel_z_",
                          geometry_controller.Kvel_z_);
+    read_essential_param(nh, "geo_controller/Kyaw_",
+                         geometry_controller.Kyaw_);
     read_essential_param(nh, "geo_controller/attctrl_tau_",
                          geometry_controller.attctrl_tau_);
     read_essential_param(nh, "geo_controller/max_fb_acc_",

@@ -59,6 +59,7 @@ public:
         double Kvel_x_;
         double Kvel_y_;
         double Kvel_z_;
+        double Kyaw_;
         double attctrl_tau_;
         double max_fb_acc_;
     };
@@ -71,6 +72,7 @@ public:
     int pose_solver;
     double mass;
     double gra;
+    double gx, gy;
     double max_angle;
     double ctrl_freq_max;
     double max_manual_vel;

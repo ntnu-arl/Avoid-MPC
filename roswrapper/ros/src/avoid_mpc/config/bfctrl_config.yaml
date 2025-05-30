@@ -59,12 +59,13 @@ geo_controller:
     drag_dx: 0.0
     drag_dy: 0.0
     drag_dz: 0.0
-    Kpos_x_: 2
-    Kpos_y_: 2
+    Kpos_x_: 1
+    Kpos_y_: 1
     Kpos_z_: 3
-    Kvel_x_: 2
-    Kvel_y_: 2
-    Kvel_z_: 10
+    Kvel_x_: 1
+    Kvel_y_: 1
+    Kvel_z_: 5
+    Kyaw_: 1
     attctrl_tau_: 0.5
     max_fb_acc_: 20.0
 
@@ -75,13 +76,13 @@ topics_record_list:
     # - /bfctrl/local_odom
     # - /bfctrl/statue
     # - /bfctrl/takeoff_land
-    # # - /airsim_node/drone_1/front_center/DepthPlanar
+    # - /airsim_node/drone_1/front_center/DepthPlanar
     # - /mavros/imu/data
     # - /mavros/setpoint_raw/attitude
     # - /airsim_node/drone_1/odom_local_ned
     # - /mavros/local/odom
-    # # - /mpc_obstacle_avoidance_node/Path
-    # # - /mpc_obstacle_avoidance_node/obstacle
-    # # - /mpc_obstacle_avoidance_node/obstacle_array
-    # # - /mpc_obstacle_avoidance_node/point_cloud
-    # # - /avoid_mpc_node/PointCloud
+    # - /mpc_obstacle_avoidance_node/Path
+    # - /mpc_obstacle_avoidance_node/obstacle
+    # - /mpc_obstacle_avoidance_node/obstacle_array
+    # - /mpc_obstacle_avoidance_node/point_cloud
+    # - /avoid_mpc_node/PointCloud

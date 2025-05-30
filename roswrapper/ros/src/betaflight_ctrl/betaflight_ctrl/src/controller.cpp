@@ -15,6 +15,7 @@ GeometricController::GeometricController() {
     D_ << Param::get().geometry_controller.drag_dx,
         Param::get().geometry_controller.drag_dy,
         Param::get().geometry_controller.drag_dz;
+    Kyaw_ = Param::get().geometry_controller.Kyaw_;
     resetThrustMapping();
 }
 double GeometricController::fromQuaternion2yaw(const Eigen::Quaterniond &q) {
@@ -37,21 +38,26 @@ GeometricController::GeometryController(Desired_State_t &des,
     if (mode == quadrotor_msgs::Command::ACCELERATION_MODE) {
         desired_acc = des.a;
     } else if (mode == quadrotor_msgs::Command::POSITION_MODE) {
-        desired_acc = controlPosition(des.p, des.v, des.a, des.yaw, odom) - W_g;
+        desired_acc = controlPosition(des.p, des.v, des.a, des.yaw, odom);
     }
     Eigen::Quaterniond target_q = acc2quaternion(desired_acc, des.yaw);
     double target_yaw = fromQuaternion2yaw(target_q);
     double curr_yaw = fromQuaternion2yaw(odom.q);
+    double dyaw = (target_yaw - curr_yaw) * Kyaw_;  // simple P
 
-    // // if acc control, highjack u struct
-    // u.bodyrates = W_R_B.transpose() * (desired_acc + W_g);
-    // u.yaw_rate = (target_yaw - curr_yaw) * 0.2;  // simple P
+    // if acc control, highjack u struct
+    u.bodyrates = W_R_B.transpose() * (desired_acc + W_g);
+    u.yaw_rate = dyaw;
+    return u;
 
     // acc to att
     const Eigen::Vector3d zboby = W_R_B.col(2);
     u.q = target_q;
     u.thrust = Param::get().mass * (W_R_B.transpose() * desired_acc).dot(zboby);
-    u.yaw_rate = (target_yaw - curr_yaw) * 0.2;  // simple P
+    u.yaw_rate = dyaw;
+
+    if (Param::get().use_bodyrate_ctrl)
+        u.bodyrates = geometric_attcontroller(u.q, odom.q); // Calculate BodyRate
 
     // if (mode != quadrotor_msgs::Command::ANGULAR_MODE) {
     //     if (mode == quadrotor_msgs::Command::QUAT_MODE) {

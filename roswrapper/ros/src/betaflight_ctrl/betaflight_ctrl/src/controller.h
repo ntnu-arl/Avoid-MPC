@@ -64,6 +64,7 @@ private:
     static constexpr double kMinNormalizedCollectiveThrust_ = 3.0;
     // GeoController
     Eigen::Vector3d Kpos_, Kvel_, D_;
+    double Kyaw_;
     // Thrust-accel mapping params
     const double rho2_ = 0.998; // do not change
     double thr2acc_;

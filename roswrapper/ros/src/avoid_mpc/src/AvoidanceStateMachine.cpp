@@ -18,9 +18,9 @@ void AvoidanceStateMachine::InitCircleState() {
     Eigen::Vector3d dPos = (goalPos - initPos) / mMpcN;
     for (int i = 0; i < mMpcN; i++) {
         Eigen::Vector3d posi = initPos + i * dPos;
-        mRefPath.push_back({posi.x(), posi.y(), posi.z(), 0, 0, 0, 0, 0, 0, 0});
+        mRefPath.push_back({mPos.x(), mPos.y(), mPos.z(), 0, 0, 0, 0, 0, 0, 0});
     }
-    mStateGlobalGoal = {0., 0., mHeight, 0., 0., 0., 0., 0., 0., 0.};
+    mStateGlobalGoal = {0, 0, mHeight, 0, 0., 0., 0., 0., 0., 0.};
 }
 void AvoidanceStateMachine::GetInitPath() {
     GetCurStateQuad(ros::Time::now().toSec() + mParamDecay);
@@ -29,30 +29,69 @@ void AvoidanceStateMachine::GetInitPath() {
     double goalz = mStateGlobalGoal[2];
     if (mStrTask == "forward") {
         goalx = mSpeed * mMpcT + mPos.x();
-        goalx = fmin(goalx, Param::GetTaskParam().farestPoint);
+        goalx = fmin(goalx, Param::GetTaskParam().gx);
         goaly = 0;
         goalz = mHeight;
+
+        for (int i = 0; i < mMpcN - 1; i++) {
+            mRefPath[i] = {
+                mRefPath[i + 1][0], mRefPath[i + 1][1], goalz,
+                mRefPath[i + 1][3], mRefPath[i + 1][4], mRefPath[i + 1][5],
+                mRefPath[i + 1][6], mRefPath[i + 1][7], mRefPath[i + 1][8],
+                mRefPath[i + 1][9]};
+                ROS_INFO("%d %f %f %f", i, mRefPath[i][0], mRefPath[i][1], mRefPath[i][2]);
+        }
+        mRefPath[mMpcN - 1] = {goalx, goaly, goalz, 0, mSpeed, 0, 0, 0, 0, 0};
     } else if (mStrTask == "global_goal") {
-        Eigen::Vector3d goalPos(mStateGlobalGoal[0], mStateGlobalGoal[1],
-                                mStateGlobalGoal[2]);
-        Eigen::Vector3d lastGoalPos(mRefPath.back()[0], mRefPath.back()[1],
-                                    mRefPath.back()[2]);
-        Eigen::Vector3d dPos = goalPos - lastGoalPos;
-        dPos = dPos.normalized() * std::min(dPos.norm(), mSpeed * mMpcDt);
-        goalPos = lastGoalPos + dPos;
-        goalx = goalPos[0];
-        goaly = goalPos[1];
-        goalz = goalPos[2];
+        Eigen::Vector3d goalPos(mStateGlobalGoal[0], mStateGlobalGoal[1], mStateGlobalGoal[2]);
+        Eigen::Vector3d dPos = goalPos - mPos;
+        dPos = (dPos.normalized() * std::min(dPos.norm(), mSpeed * mMpcDt));
+        for (int i = 0; i < mMpcN - 1; i++) {
+            Eigen::Vector3d posi = mPos + i * dPos;
+            mRefPath[i] = {
+                posi[0], posi[1], posi[2],
+                mStateGlobalGoal[3], mRefPath[i + 1][4], mRefPath[i + 1][5],
+                mRefPath[i + 1][6], mRefPath[i + 1][7], mRefPath[i + 1][8],
+                mRefPath[i + 1][9]};
+                // ROS_INFO("%d %f %f %f %f %f %f %f %f %f %f", i, mRefPath[i][0], mRefPath[i][1], mRefPath[i][2],
+                //     mRefPath[i][3], mRefPath[i][4], mRefPath[i][5],
+                //     mRefPath[i][6], mRefPath[i][7], mRefPath[i][8], mRefPath[i][9]);
+        }
+        Eigen::Vector3d posN = mPos + mMpcN * dPos;
+        mRefPath[mMpcN - 1] = {posN[0], posN[1], posN[2], mRefPath[mMpcN - 2][3], mSpeed, 0, 0, 0, 0, 0};
     }
-    for (int i = 0; i < mMpcN - 1; i++) {
-        mRefPath[i] = {
-            mRefPath[i + 1][0], mRefPath[i + 1][1], goalz,
-            mRefPath[i + 1][3], mRefPath[i + 1][4], mRefPath[i + 1][5],
-            mRefPath[i + 1][6], mRefPath[i + 1][7], mRefPath[i + 1][8],
-            mRefPath[i + 1][9]};
-    }
-    mRefPath[mMpcN - 1] = {goalx, goaly, goalz, 0, mSpeed, 0, 0, 0, 0, 0};
 }
+// void AvoidanceStateMachine::GetInitPath() {
+//     GetCurStateQuad(ros::Time::now().toSec() + mParamDecay);
+//     double goalx = mStateGlobalGoal[0];
+//     double goaly = mStateGlobalGoal[1];
+//     double goalz = mStateGlobalGoal[2];
+//     if (mStrTask == "forward") {
+//         goalx = mSpeed * mMpcT + mPos.x();
+//         goalx = fmin(goalx, Param::GetTaskParam().gx);
+//         goaly = 0;
+//         goalz = mHeight;
+//     } else if (mStrTask == "global_goal") {
+//         Eigen::Vector3d goalPos(mStateGlobalGoal[0], mStateGlobalGoal[1],
+//                                 mStateGlobalGoal[2]);
+//         Eigen::Vector3d lastGoalPos(mRefPath.back()[0], mRefPath.back()[1],
+//                                     mRefPath.back()[2]);
+//         Eigen::Vector3d dPos = goalPos - lastGoalPos;
+//         dPos = dPos.normalized() * std::min(dPos.norm(), mSpeed * mMpcDt);
+//         goalPos = lastGoalPos + dPos;
+//         goalx = goalPos[0];
+//         goaly = goalPos[1];
+//         goalz = goalPos[2];
+//     }
+//     for (int i = 0; i < mMpcN - 1; i++) {
+//         mRefPath[i] = {
+//             mRefPath[i + 1][0], mRefPath[i + 1][1], goalz,
+//             mRefPath[i + 1][3], mRefPath[i + 1][4], mRefPath[i + 1][5],
+//             mRefPath[i + 1][6], mRefPath[i + 1][7], mRefPath[i + 1][8],
+//             mRefPath[i + 1][9]};
+//     }
+//     mRefPath[mMpcN - 1] = {goalx, goaly, goalz, 0, mSpeed, 0, 0, 0, 0, 0};
+// }
 void AvoidanceStateMachine::SetupMPC() {
     mMpcDt = Param::GetConParam().dt;
     mConDt = Param::GetConParam().conDt;
@@ -73,7 +112,9 @@ void AvoidanceStateMachine::SetupMPC() {
     mSpeed = Param::GetConParam().speed;
     mParamMPCMaxIter = Param::GetConParam().maxIter;
     mParamNearestPointSum = Param::GetConParam().nearestPointSum;
-    mHeight = Param::GetTaskParam().height;
+    mgx = Param::GetTaskParam().gx;
+    mgy = Param::GetTaskParam().gy;
+    mHeight = Param::GetTaskParam().gz;
 
     mParamIsUseOdomEstimate = Param::GetConParam().useOdomEst;
     mParamOnlyTrustVel = Param::GetConParam().onlyTrustVel;
@@ -172,7 +213,7 @@ void AvoidanceStateMachine::GlobalGoalCallback(
     mStateGlobalGoal[0] = msg->point.x;
     mStateGlobalGoal[1] = msg->point.y;
     mStateGlobalGoal[2] = msg->point.z;
-    mStateGlobalGoal[3] = 0.;
+    mStateGlobalGoal[3] = atan2(msg->point.y, msg->point.x);
 }
 void AvoidanceStateMachine::QuadStatueCallback(
     const quadrotor_msgs::BfctrlStatueConstPtr &msg) {
@@ -252,10 +293,48 @@ AvoidanceStateMachine::GetRefStates(const ObstacleList &obstacles) {
         }
     }
     std::vector<double> vecTarget = mRefPath.back();
-    double targetdX = mSpeed * mMpcT - std::max(0., vecTarget[0] - mPos.x());
-    targetdX = std::max(0., targetdX);
-    vecTarget[0] += targetdX;
-    vecTarget[1] = 0.;
+    // Eigen::Vector3d foo(vecTarget[0], vecTarget[1], mPos.z());
+    // double targetdXY = - std::max(0., (foo - mPos).norm()) + mSpeed * mMpcT;
+    // // targetdXY = std::max(0., targetdXY);
+    // // vecTarget[0] += targetdXY;
+    // // // vecTarget[1] += targetdXY;
+    // //
+    // // // ROS_INFO("--------------");
+    // // // ROS_INFO("vecTarget %f %f %f", vecTarget[0], vecTarget[1], vecTarget[2]);
+    // double targetdX = mSpeed * mMpcT - std::max(0., vecTarget[0] - mPos.x());
+    // // // ROS_INFO("mSpeed %f", mSpeed);
+    // // // ROS_INFO("mMpcT %f", mMpcT);
+    // // // ROS_INFO("mPos.x() %f", mPos.x());
+    // // // ROS_INFO("std::max(0., vecTarget[0] - mPos.x() %f", std::max(0., vecTarget[0] - mPos.x()));
+    // // // ROS_INFO("targetdX %f", targetdX);
+    // targetdX = std::max(0., targetdX);
+    // vecTarget[0] += targetdX;
+    // double err = vecTarget[1] - mPos.y();
+    // double targetdY = mSpeed * mMpcT - std::fabs(err);
+    // if (targetdY > 0 && err > 0)
+    //     vecTarget[1] += mSpeed * mMpcT - err;
+    // else if (targetdY > 0 && err < 0)
+    //     vecTarget[1] += mSpeed * mMpcT + err;
+    // if (vecTarget[0] < 0)
+    // {
+    //     double targetdX = mSpeed * mMpcT - std::max(0., mPos.x() - vecTarget[0]);
+    //     vecTarget[0] -= std::max(0., targetdX);
+    // }
+    // else
+    // {
+    //     double targetdX = mSpeed * mMpcT - std::max(0., vecTarget[0] - mPos.x());
+    //     vecTarget[0] += std::max(0., targetdX);
+    // }
+    // if (vecTarget[1] < 0)
+    // {
+    //     double targetdY = mSpeed * mMpcT - std::max(0., mPos.y() - vecTarget[1]);
+    //     vecTarget[1] -= std::max(0., targetdY);
+    // }
+    // else
+    // {
+    //     double targetdY = mSpeed * mMpcT - std::max(0., vecTarget[1] - mPos.y());
+    //     vecTarget[1] += std::max(0., targetdY);
+    // }
     vecRefStates.insert(vecRefStates.end(), vecTarget.begin(), vecTarget.end());
     return vecRefStates;
 }
@@ -299,30 +378,30 @@ void AvoidanceStateMachine::Step(const ros::TimerEvent &event) {
                 quadrotor_msgs::BfctrlStatue::BFCTRL_STATUS_WAITINGCMD ||
             mStatueQuad == quadrotor_msgs::BfctrlStatue::BFCTRL_STATUS_CMD) {
             ROS_INFO("\033[95m[MPC]\033[0m Triggered, takeoff.");
-            mStateProcess = TAKEOFF;
+            mStateProcess = TASK;
             mTakeoffLandTime = -1;
             mTakeoffLandZ = mHeight;
         }
         break;
     }
-    case TAKEOFF: {
-        if (mPos.z() < 0.6 * mHeight) {
-            if (BfctrlNotReciveTakeoffMsg(curTime)) {
-                mTakeoffLandTime = curTime;
-                mTakeoffLandZ = mPos.z();
-                quadrotor_msgs::TakeoffLand takeoffMsg;
-                takeoffMsg.takeoff_height = mHeight - mPos.z();
-                takeoffMsg.takeoff_land_cmd =
-                    quadrotor_msgs::TakeoffLand::TAKEOFF;
-                mPubTakeoffLand.publish(takeoffMsg);
-            }
-        } else {
-            ROS_INFO("\033[95m[MPC]\033[0m Reach target height, start task.");
-            mStateProcess = TASK;
-            ros::Duration(1.0).sleep();
-        }
-        break;
-    }
+    // case TAKEOFF: {
+    //     if (mPos.z() < 0.6 * mHeight) {
+    //         if (BfctrlNotReciveTakeoffMsg(curTime)) {
+    //             mTakeoffLandTime = curTime;
+    //             mTakeoffLandZ = mPos.z();
+    //             quadrotor_msgs::TakeoffLand takeoffMsg;
+    //             takeoffMsg.takeoff_height = mHeight - mPos.z();
+    //             takeoffMsg.takeoff_land_cmd =
+    //                 quadrotor_msgs::TakeoffLand::TAKEOFF;
+    //             mPubTakeoffLand.publish(takeoffMsg);
+    //         }
+    //     } else {
+    //         ROS_INFO("\033[95m[MPC]\033[0m Reach target height, start task.");
+    //         mStateProcess = TASK;
+    //         ros::Duration(1.0).sleep();
+    //     }
+    //     break;
+    // }
     case TASK: {
         auto start = std::chrono::high_resolution_clock::now();
         std::vector<double> u;
@@ -348,6 +427,15 @@ void AvoidanceStateMachine::Step(const ros::TimerEvent &event) {
             decay = ros::Time::now().toSec() - start;
         }
         if (isSafety) {
+            // Eigen::Vector3d goalPos(mStateGlobalGoal[0], mStateGlobalGoal[1], mStateGlobalGoal[2]);
+            // Eigen::Vector3d dPos = goalPos - mPos;
+            // dPos = (dPos.normalized() * std::min(dPos.norm(), mSpeed * mMpcT));
+            // if (dPos.norm() > 0.1)
+            //     u[3] = atan2(dPos[1], dPos[0]);
+            // else
+            //     u[3] = mRefPath[0][3];
+            // ROS_INFO("yaw des %f", u[3]);
+            u[3] = mStateGlobalGoal[3];
             PubCmd(u);
         } else {
             ROS_INFO("\033[95m[MPC]\033[0m Slow down.");
@@ -382,7 +470,7 @@ void AvoidanceStateMachine::PubCmd(std::vector<double> &u) {
     cmdMsg.acceleration.x = u[0];
     cmdMsg.acceleration.y = u[1];
     cmdMsg.acceleration.z = u[2];
-    cmdMsg.yaw = 0;
+    cmdMsg.yaw = u[3];
     mPubCmd.publish(cmdMsg);
 }
 void AvoidanceStateMachine::PubSlowDownCmd() {
