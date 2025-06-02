@@ -4,13 +4,13 @@ mpc_max_iter: 3
 use_drag_coefficient: 0
 nearest_point_num: 3
 # mpc cost weights
-goal_p_x: 50.0
-goal_p_y: 50.0
+goal_p_x: 25.0
+goal_p_y: 25.0
 goal_p_z: 100.0
 goal_yaw: 10.0
-goal_v_x: 1.0
-goal_v_y: 1.0
-goal_v_z: 1.0
+goal_v_x: 2.0
+goal_v_y: 2.0
+goal_v_z: 2.0
 goal_a_x: 0.0
 goal_a_y: 0.0
 goal_a_z: 0.0
@@ -43,24 +43,24 @@ gain_a_y: 0.999999
 gain_a_z: 0.999999
 gain_yaw_dot: 1. # For future use
 
-speed: 1
+speed: 1.8
 drone_radius: 0.5
 
-a_min_z: 5.0
+a_min_z: 6.0
 a_max_z: 15.0
 a_max_xy: 10.0
 a_max_yaw_dot: 5.0
 
-goal_x: 6
-goal_y: 2
-goal_z: 1.5
+goal_x: 2.4
+goal_y: 26.9
+goal_z: 2.7
 safety_distance: 0.2
 
 # perception parameters
-fx: 253
-fy: 253
-cx: 240
-cy: 135
+fx: 314.5
+fy: 314.5
+cx: 320
+cy: 240
 resize_scale: 10
 pixel2meter: 1
 depth_max: 100 #meter

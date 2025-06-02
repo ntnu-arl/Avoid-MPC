@@ -33,6 +33,9 @@
   <exec_depend>rospy</exec_depend>
   <exec_depend>sensor_msg</exec_depend>
   <exec_depend>tf</exec_depend>
+  <build_depend>quadrotor_msgs</build_depend>
+  <exec_depend>quadrotor_msgs</exec_depend>
+  <build_export_depend>quadrotor_msgs</build_export_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

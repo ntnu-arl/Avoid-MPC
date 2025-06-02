@@ -2,11 +2,11 @@
 # ⭐⭐⭐  Set parameters carefully for satisfied performance!   ⭐⭐⭐ #
 #########################################################################
 
-mass: 1.46 # kg
+mass: 0.79 # kg
 gra: 9.81
 pose_solver: 1 # 0:From ZhepeiWang (drag & less singular) 1:From ZhepeiWang, 2:From rotor-drag
 ctrl_freq_max: 30.0
-use_bodyrate_ctrl: false
+use_bodyrate_ctrl: true
 max_manual_vel: 5.0
 max_manual_vel_z: 1.0
 max_angle: 30 # Attitude angle limit in degree. A negative value means no limit.
@@ -59,14 +59,14 @@ geo_controller:
     drag_dx: 0.0
     drag_dy: 0.0
     drag_dz: 0.0
-    Kpos_x_: 1
-    Kpos_y_: 1
+    Kpos_x_: 0.2
+    Kpos_y_: 0.2
     Kpos_z_: 3
-    Kvel_x_: 1
-    Kvel_y_: 1
+    Kvel_x_: 0.5
+    Kvel_y_: 0.5
     Kvel_z_: 5
     Kyaw_: 1
-    attctrl_tau_: 0.5
+    attctrl_tau_: 3
     max_fb_acc_: 20.0
 
 topics_record_list:

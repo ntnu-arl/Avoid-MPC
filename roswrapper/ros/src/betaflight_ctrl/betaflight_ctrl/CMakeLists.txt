@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   uav_utils
   mavros
   quadrotor_msgs
+  rpg_quadrotor_msgs
   tf
 )
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")

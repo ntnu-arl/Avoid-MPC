@@ -76,7 +76,6 @@ int main(int argc, char *argv[]) {
     fsm.ctrl_acc_pub = nh.advertise<geometry_msgs::Twist>("/rmf_owl/cmd/acc", 10);
     fsm.ctrl_att_pub = nh.advertise<geometry_msgs::Quaternion>("/rmf_owl/cmd/att", 10);
     fsm.ctrl_rates_pub = nh.advertise<rpg_quadrotor_msgs::ControlCommand>("/hummingbird/autopilot/control_command_input", 10);
-    fsm.ctrl_rates_pub = nh.advertise<geometry_msgs::Quaternion>("/rmf_owl/cmd/acc", 10);
 
     fsm.des_pub = nh.advertise<nav_msgs::Odometry>("des", 10);
     fsm.statue_pub = statue_pub;

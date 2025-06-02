@@ -32,18 +32,14 @@ void BfCtrlFSM::process(const ros::TimerEvent &event) {
             hover_des = Desired_State_t(odom_data);
             hover_des.p.z() = Param::get().takeoff_land.height;
             ROS_INFO("\033[32m[bfctrl]\033[0m INIT(L0) --> "
-                     "AUTO_TAKEOFF(L1)");
+                     "AUTO_HOVER(L1)");
             set_start_pose_for_takeoff_land(odom_data);
-            state = AUTO_TAKEOFF;
+            state = AUTO_HOVER;
         }
         break;
     }
     case AUTO_TAKEOFF: {
         // send yaw in local odom frame
-        // Eigen::Vector3d goal(Param::get().gx, Param::get().gy, Param::get().takeoff_land.height);
-        // // ROS_INFO("\033[32m[bfctrl]\033[0m global goal: %f %f %f", goal(0), goal(1), goal(2));
-        // goal = odom_data.homeRInv * (goal - odom_data.homeT);
-        // // ROS_INFO("\033[32m[bfctrl]\033[0m local goal: %f %f %f", goal(0), goal(1), goal(2));
         geometry_msgs::PointStamped msg;
         msg.header.stamp = ros::Time::now();
         msg.point.x = goal.x();
@@ -76,6 +72,14 @@ void BfCtrlFSM::process(const ros::TimerEvent &event) {
         break;
     }
     case AUTO_HOVER: {
+        // send yaw in local odom frame
+        geometry_msgs::PointStamped msg;
+        msg.header.stamp = ros::Time::now();
+        msg.point.x = goal.x();
+        msg.point.y = goal.y();
+        msg.point.z = goal.z();
+        global_goal_pub.publish(msg);
+
         if (cmd_is_received(now_time)) {
             state = CMD_CTRL;
             des = get_cmd_des();
@@ -261,7 +265,8 @@ Desired_State_t BfCtrlFSM::get_takeoff_land_des(const double speed) {
     //                      .toSec(); // speed > 0 means takeoff
 
     Desired_State_t des;
-    des.p = Eigen::Vector3d(takeoff_land.start_pose(0), takeoff_land.start_pose(1), Param::get().takeoff_land.height);
+    des.p = Eigen::Vector3d(takeoff_land.start_pose(0), takeoff_land.start_pose(1), goal.z());
+    // des.p = Eigen::Vector3d(10, 10, Param::get().takeoff_land.height);
     des.v = Eigen::Vector3d::Zero();
     des.a = Eigen::Vector3d::Zero();
     des.a = Eigen::Vector3d::Zero();
@@ -396,7 +401,9 @@ void BfCtrlFSM::publish_ctrl(const Controller_Output_t &u,
         msg.armed = true;
         msg.expected_execution_time = ros::Time::now();
         msg.collective_thrust = u.thrust;
-        msg.bodyrates = u.bodyrates;
+        msg.bodyrates.x = u.bodyrates.x();
+        msg.bodyrates.y = u.bodyrates.y();
+        msg.bodyrates.z = u.bodyrates.z();
 
         ctrl_rates_pub.publish(msg);
     } else {

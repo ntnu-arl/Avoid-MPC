@@ -53,7 +53,7 @@ GeometricController::GeometryController(Desired_State_t &des,
     // acc to att
     const Eigen::Vector3d zboby = W_R_B.col(2);
     u.q = target_q;
-    u.thrust = Param::get().mass * (W_R_B.transpose() * desired_acc).dot(zboby);
+    u.thrust = (W_R_B.transpose() * desired_acc).dot(zboby); // * Param::get().mass;
     u.yaw_rate = dyaw;
 
     if (Param::get().use_bodyrate_ctrl)
@@ -166,7 +166,7 @@ Eigen::Vector3d GeometricController::geometric_attcontroller(
     rotmat_d = ref_att.toRotationMatrix();
     error_att = 0.5 * matrix_hat_inv(rotmat_d.transpose() * rotmat -
                                      rotmat.transpose() * rotmat_d);
-    ratecmd = (2.0 / Param::get().geometry_controller.attctrl_tau_) * error_att;
+    ratecmd = Param::get().geometry_controller.attctrl_tau_ * error_att;
     return ratecmd;
 }
 Eigen::Vector3d
@@ -183,11 +183,11 @@ GeometricController::attcontroller(const Eigen::Quaterniond &ref_att,
     const Eigen::Vector4d inverse(1.0, -1.0, -1.0, -1.0);
     const Eigen::Quaterniond q_inv = curr_att.inverse();
     const Eigen::Quaterniond qe = q_inv * ref_att;
-    ratecmd(0) = (2.0 / Param::get().geometry_controller.attctrl_tau_) *
+    ratecmd(0) = Param::get().geometry_controller.attctrl_tau_ *
                  std::copysign(1.0, qe.w()) * qe.x();
-    ratecmd(1) = (2.0 / Param::get().geometry_controller.attctrl_tau_) *
+    ratecmd(1) = Param::get().geometry_controller.attctrl_tau_ *
                  std::copysign(1.0, qe.w()) * qe.y();
-    ratecmd(2) = (2.0 / Param::get().geometry_controller.attctrl_tau_) *
+    ratecmd(2) = Param::get().geometry_controller.attctrl_tau_ *
                  std::copysign(1.0, qe.w()) * qe.z();
     return ratecmd;
 }

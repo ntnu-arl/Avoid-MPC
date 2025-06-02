@@ -35,7 +35,7 @@ ${catkin_INCLUDE_DIRS}
 ${EIGEN3_INCLUDE_DIR}
 ${Casadi_INCLUDE_DIR}
 )
-catkin_package()
+catkin_package(CATKIN_DEPENDS quadrotor_msgs)
 
 set(LIBS 
 ${OpenCV_LIBS} 
@@ -59,3 +59,7 @@ target_link_libraries(mpc_obstacle_avoidance_node
   ${PCL_LIBRARIES}
 )
 
+catkin_install_python(PROGRAMS
+  src/depth_convertor.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)

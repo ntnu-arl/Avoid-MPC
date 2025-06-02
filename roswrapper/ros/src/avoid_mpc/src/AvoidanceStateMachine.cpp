@@ -427,14 +427,6 @@ void AvoidanceStateMachine::Step(const ros::TimerEvent &event) {
             decay = ros::Time::now().toSec() - start;
         }
         if (isSafety) {
-            // Eigen::Vector3d goalPos(mStateGlobalGoal[0], mStateGlobalGoal[1], mStateGlobalGoal[2]);
-            // Eigen::Vector3d dPos = goalPos - mPos;
-            // dPos = (dPos.normalized() * std::min(dPos.norm(), mSpeed * mMpcT));
-            // if (dPos.norm() > 0.1)
-            //     u[3] = atan2(dPos[1], dPos[0]);
-            // else
-            //     u[3] = mRefPath[0][3];
-            // ROS_INFO("yaw des %f", u[3]);
             u[3] = mStateGlobalGoal[3];
             PubCmd(u);
         } else {
